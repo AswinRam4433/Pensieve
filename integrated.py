@@ -35,3 +35,5 @@ class IntegratedPipeline:
         self.FaceIndexer.load_index() ## TODO: Need to just get index info instead of actual loading here
         self.CLIPImageSearcher.get_index_info()
         self.ImageToImageSearch.get_index_info()
+    
+        

@@ -330,6 +330,15 @@ class CLIPImageSearcher:
         
         print(f"📊 Found {len(duplicate_groups)} groups of potential duplicates")
         return duplicate_groups
+    
+    def get_index_info(self):
+        """Get information about the current index"""
+        metadata = {
+            "model_name": self.model_name,
+            "created_at": datetime.now().isoformat(),
+            "image_dir": str(self.image_dir)
+        }
+        
 
 
 def main():
