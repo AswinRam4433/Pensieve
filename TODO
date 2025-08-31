@@ -1,0 +1,5 @@
+[] Assigning names to faces
+[] Index management in FAISS. When a photo gets deleted etc, do we redo the index or do we use this information some other way??
+[] Indexes for each category of searching and an index metadata file for storing what's what
+[] Making a unified backend app.py --> Ideally, one endpoint which calls indexing of all functionalities and one endpoint for searching that decides which functionalities are to be used further etc. 
+Need to decide on priority for calling the functionalities
