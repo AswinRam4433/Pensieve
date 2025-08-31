@@ -1,0 +1,135 @@
+import os
+from fastapi import FastAPI, UploadFile, File, Form, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
+import shutil
+import tempfile
+
+from integrated import IntegratedPipeline
+
+app = FastAPI(
+    title="Integrated Image Search API",
+    description="Unified API for face, text, and image-to-image search.",
+    version="1.0.0"
+)
+
+# Allow CORS for all origins (customize as needed)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Initialize pipeline (set image_dir as needed)
+IMAGE_DIR = "images"
+pipeline = IntegratedPipeline(image_dir=IMAGE_DIR)
+
+@app.get("/faces", response_model=None, tags=["Faces"])
+def list_faces(with_thumbnails: bool = False, thumbnail_size: int = 64):
+    """
+    List all faces in the index for dropdowns, optionally with base64 thumbnails.
+    """
+    try:
+        faces = pipeline.list_faces(with_thumbnails=with_thumbnails, thumbnail_size=thumbnail_size)
+        return {"faces": faces}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/scan", tags=["Admin"])
+def scan_repo():
+    """
+    Build all indexes from scratch. This may take a while for large datasets.
+    """
+    try:
+        pipeline.scan_repo()
+        return {"status": "success", "message": "All indexes rebuilt."}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/info", tags=["Info"])
+def get_index_info():
+    """
+    Get information about all indexes (face, text, image-to-image).
+    """
+    try:
+        info = pipeline.get_index_info()
+        return info
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/search", tags=["Search"])
+async def unified_search(
+    request: Request,
+    face_image: Optional[UploadFile] = File(None, description="Image file for face search (optional)"),
+    query_image: Optional[UploadFile] = File(None, description="Image file for image-to-image search (optional)"),
+    text: Optional[str] = Form(None, description="Text query for text-based search (optional)"),
+    require_all: Optional[bool] = Form(False, description="If True, returns intersection of results (optional)"),
+    natural_query: Optional[str] = Form(None, description="Natural language query (optional)")
+):
+    """
+    Unified search endpoint.
+    Accepts:
+    - face_image: image file for face search (optional)
+    - query_image: image file for image-to-image search (optional)
+    - text: text query for text search (optional)
+    - require_all: if True, returns intersection of results (optional)
+    - natural_query: natural language query (optional, e.g. "has to have face A, matches this description")
+    Returns: JSON with results from each search type and optionally combined.
+    """
+    query = {}
+    temp_files = []
+
+    # Handle natural language query parsing
+    if natural_query:
+        query = pipeline.parse_natural_query(natural_query)
+        # The API expects the actual files/text to be provided as well
+
+    # Handle face image upload
+    if face_image is not None:
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                shutil.copyfileobj(face_image.file, tmp)
+                tmp_path = tmp.name
+                query["face_image_path"] = tmp_path
+                temp_files.append(tmp_path)
+        except Exception as e:
+            return JSONResponse(status_code=400, content={"error": f"Failed to process face image: {e}"})
+
+    # Handle query image upload
+    if query_image is not None:
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                shutil.copyfileobj(query_image.file, tmp)
+                tmp_path = tmp.name
+                query["query_image_path"] = tmp_path
+                temp_files.append(tmp_path)
+        except Exception as e:
+            return JSONResponse(status_code=400, content={"error": f"Failed to process query image: {e}"})
+
+    # Handle text query
+    if text is not None:
+        query["text"] = text
+
+    # Handle require_all
+    query["require_all"] = require_all
+
+    # Run unified search
+    try:
+        results = pipeline.unified_search(query)
+        return JSONResponse(content=results)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    finally:
+        # Clean up temp files
+        for f in temp_files:
+            try:
+                os.remove(f)
+            except Exception:
+                pass

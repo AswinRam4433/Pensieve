@@ -3,3 +3,8 @@
 [] Indexes for each category of searching and an index metadata file for storing what's what
 [] Making a unified backend app.py --> Ideally, one endpoint which calls indexing of all functionalities and one endpoint for searching that decides which functionalities are to be used further etc. 
 Need to decide on priority for calling the functionalities
+[] UI Cleanup --> Too shabby. Needs rework + CSS Overhaul
+[] UI Needs A New Component Type for each result image
+[] Lazy loading of functionalities
+[] Nesting of queries and query types
+[] Facial Recognition is shot up. Redo it

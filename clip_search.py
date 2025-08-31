@@ -9,6 +9,7 @@ import faiss
 from pathlib import Path
 import json
 from datetime import datetime
+from config import SystemConfig
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
@@ -24,11 +25,11 @@ class CLIPImageSearcher:
         self.embeddings_path = meta_path.replace('.pkl', '_embeddings.npy')
         
         # Supported image formats
-        self.supported_formats = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.gif'}
+        self.supported_formats = SystemConfig.supported_formats
         
         # Model and device setup
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"🔧 Using device: {self.device}")
+        self.device = SystemConfig.device
+        print(f"Using device: {self.device}")
         
         # Load CLIP model
         self.model, self.preprocess = clip.load(model_name, device=self.device)
@@ -48,7 +49,7 @@ class CLIPImageSearcher:
             image = Image.open(image_path).convert('RGB')  # Ensure RGB format
             return self.preprocess(image).unsqueeze(0).to(self.device)
         except Exception as e:
-            print(f"⚠️  Error loading {image_path}: {e}")
+            print(f"Error loading {image_path}: {e}")
             return None
     
     def _process_images_in_batches(self, image_paths: List[Path]) -> Tuple[np.ndarray, List[str]]:
@@ -120,8 +121,8 @@ class CLIPImageSearcher:
         # Process images and extract embeddings
         embeddings, valid_paths = self._process_images_in_batches(image_files)
         
-        print(f"✅ Successfully processed {len(valid_paths)} images")
-        print(f"📊 Embedding shape: {embeddings.shape}")
+        print(f"Successfully processed {len(valid_paths)} images")
+        print(f"Embedding shape: {embeddings.shape}")
         
         # Create FAISS index with cosine similarity
         dimension = embeddings.shape[1]
@@ -165,9 +166,9 @@ class CLIPImageSearcher:
         with open(self.meta_path, "wb") as f:
             pickle.dump(metadata, f)
         
-        print(f"✅ Saved index to {self.index_path}")
-        print(f"✅ Saved metadata to {self.meta_path}")
-        print(f"✅ Saved embeddings to {self.embeddings_path}")
+        print(f"Saved index to {self.index_path}")
+        print(f"Saved metadata to {self.meta_path}")
+        print(f"Saved embeddings to {self.embeddings_path}")
     
     def load_index(self) -> Tuple[faiss.Index, Dict, Optional[np.ndarray]]:
         """Load FAISS index and metadata from disk."""
@@ -189,15 +190,15 @@ class CLIPImageSearcher:
         if os.path.exists(self.embeddings_path):
             embeddings = np.load(self.embeddings_path)
         
-        print(f"✅ Loaded index with {metadata['total_images']} images")
-        print(f"📊 Model: {metadata['model_name']}, Created: {metadata['created_at']}")
+        print(f"Loaded index with {metadata['total_images']} images")
+        print(f"Model: {metadata['model_name']}, Created: {metadata['created_at']}")
         
         return index, metadata, embeddings
     
     def search_by_text(self, query: str, index: faiss.Index, metadata: Dict, 
                       k: int = 5) -> List[Dict]:
         """Search for images using text description."""
-        print(f"🔍 Searching for: '{query}'")
+        print(f"Searching for: '{query}'")
         
         try:
             # Encode text query
@@ -249,13 +250,13 @@ class CLIPImageSearcher:
     def display_results(self, results: List[Dict], show_images: bool = False) -> None:
         """Display search results in a formatted way."""
         if not results:
-            print("❌ No results found.")
+            print("No results found.")
             return
         
         search_type = results[0]["search_type"]
         query = results[0]["query"]
         
-        print(f"\n🎯 Top {len(results)} results for {search_type} search:")
+        print(f"\nTop {len(results)} results for {search_type} search:")
         print(f"Query: {query}")
         print("-" * 60)
         
@@ -269,7 +270,7 @@ class CLIPImageSearcher:
                 try:
                     Image.open(result['image_path']).show()
                 except Exception as e:
-                    print(f"    ⚠️  Could not display image: {e}")
+                    print(f"Could not display image: {e}")
             print()
     
     def get_index_stats(self, metadata: Dict) -> Dict:
@@ -294,16 +295,16 @@ class CLIPImageSearcher:
         with open(output_path, 'w') as f:
             json.dump(export_data, f, indent=2)
         
-        print(f"💾 Results exported to {output_path}")
+        print(f"Results exported to {output_path}")
     
     def find_duplicate_images(self, index: faiss.Index, metadata: Dict, 
                              similarity_threshold: float = 0.95) -> List[List[str]]:
         """Find groups of very similar (potentially duplicate) images."""
-        print(f"🔍 Finding potential duplicates (similarity > {similarity_threshold:.1%})...")
+        print(f"Finding potential duplicates (similarity > {similarity_threshold:.1%})...")
         
         embeddings = np.load(self.embeddings_path) if os.path.exists(self.embeddings_path) else None
         if embeddings is None:
-            print("❌ Embeddings not available for duplicate detection")
+            print("Embeddings not available for duplicate detection")
             return []
         
         image_paths = metadata["image_paths"]
@@ -328,7 +329,7 @@ class CLIPImageSearcher:
             if len(similar_images) > 1:  # Group has more than one image
                 duplicate_groups.append(similar_images)
         
-        print(f"📊 Found {len(duplicate_groups)} groups of potential duplicates")
+        print(f"Found {len(duplicate_groups)} groups of potential duplicates")
         return duplicate_groups
     
     def get_index_info(self):
@@ -344,8 +345,8 @@ class CLIPImageSearcher:
 def main():
     """Main execution function with examples."""
     # Configuration
-    IMAGE_DIR = "/Users/varamana/Desktop/Wiki"  # Update this path
-    QUERY_IMAGE = "/Users/varamana/Desktop/Wiki/20211221_123756.jpg"  # Update this path
+    IMAGE_DIR = SystemConfig.my_img_directory  # Update this path
+    QUERY_IMAGE = SystemConfig.sample_query_img_path  # Update this path
     
     # Initialize the searcher
     searcher = CLIPImageSearcher(image_dir=IMAGE_DIR)
@@ -353,15 +354,15 @@ def main():
     try:
         # Check if index exists, build if not
         if not os.path.exists(searcher.index_path):
-            print("🔧 Building new CLIP index...")
+            print("Building new CLIP index...")
             index, metadata = searcher.build_index()
         else:
-            print("📁 Loading existing index...")
+            print("Loading existing index...")
             index, metadata, embeddings = searcher.load_index()
         
         # Display index statistics
         stats = searcher.get_index_stats(metadata)
-        print(f"\n📊 Index Statistics:")
+        print(f"\nIndex Statistics:")
         for key, value in stats.items():
             print(f"  {key}: {value}")
         
@@ -376,13 +377,13 @@ def main():
         ]
         
         for query in text_queries[:2]:  # Test first 2 queries
-            print(f"\n🔤 TEXT SEARCH")
+            print(f"\nTEXT SEARCH")
             results = searcher.search_by_text(query, index, metadata, k=3)
             searcher.display_results(results)
         
         
         else:
-            print(f"⚠️  Query image {QUERY_IMAGE} not found. Skipping image search.")
+            print(f"Query image {QUERY_IMAGE} not found. Skipping image search.")
         
         # Example 3: Find potential duplicates
         # duplicate_groups = searcher.find_duplicate_images(index, metadata)
@@ -394,7 +395,7 @@ def main():
         #             print(f"  - {img}")
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
 
 
 # Utility functions for advanced use cases

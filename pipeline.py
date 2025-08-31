@@ -1,6 +1,4 @@
 import os
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-
 import torch
 from transformers import AutoProcessor, AutoTokenizer, AutoModel
 import faiss
@@ -13,12 +11,17 @@ import os
 import requests
 from PIL import Image
 from io import BytesIO
+from config import SystemConfig
+from utils.custom_logging import custom_logger
+
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
 
 class ImageToImageSearch:
     
-    def __init__(self,image_dir:str, model_path="google/siglip-base-patch16-384", tokenizer_path="google/siglip-base-patch16-384", processor_path="google/siglip-base-patch16-384", index_path="./siglip_index.faiss", metadata_path="./index_metadata.json"):
-        # self.device = torch.device('mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu'))
-        self.device = torch.device('cuda' if torch.cuda.is_available() else "cpu")
+    def __init__(self,image_dir:str, model_path=SystemConfig.image_to_image_model, tokenizer_path=SystemConfig.image_to_image_model, processor_path=SystemConfig.image_to_image_model, index_path="./siglip_index.faiss", metadata_path="./index_metadata.json"):
+        self.device = SystemConfig.device
+        self.supported_formats = SystemConfig.supported_formats
         self.image_dir = image_dir
         # File paths for persistence
         self.index_path = index_path
@@ -49,12 +52,14 @@ class ImageToImageSearch:
             with open(self.metadata_path, 'w') as f:
                 json.dump(self.image_metadata, f, indent=2)
             
-            print(f"Index saved to {self.index_path}")
-            print(f"Metadata saved to {self.metadata_path}")
-            print(f"Total vectors in index: {self.index.ntotal}")
+            custom_logger.info(f"Index saved to {self.index_path}")
+            custom_logger.info(f"Metadata saved to {self.metadata_path}")
+            custom_logger.info(f"Total vectors in index: {self.index.ntotal}")
+        
         except Exception as e:
-            print(f"Error saving index: {e}")
-    
+            custom_logger.error(f"Error saving index: {e}")
+
+
     def load_index(self):
         """Load existing FAISS index and metadata from disk"""
         try:
@@ -66,15 +71,16 @@ class ImageToImageSearch:
                 with open(self.metadata_path, 'r') as f:
                     self.image_metadata = json.load(f)
                 
-                print(f"Index loaded from {self.index_path}")
-                print(f"Metadata loaded from {self.metadata_path}")
-                print(f"Total vectors in index: {self.index.ntotal}")
-                print(f"Total metadata entries: {len(self.image_metadata)}")
+                custom_logger.info(f"Index loaded from {self.index_path}")
+                custom_logger.info(f"Metadata loaded from {self.metadata_path}")
+                custom_logger.info(f"Total vectors in index: {self.index.ntotal}")
+                custom_logger.info(f"Total metadata entries: {len(self.image_metadata)}")
             else:
-                print("No existing index found. Starting with empty index.")
+                custom_logger.warning("Index or metadata file not found. Starting with empty index.")
+
         except Exception as e:
-            print(f"Error loading index: {e}")
-            print("Starting with empty index.")
+            custom_logger.error(f"Error loading index: {e}")
+            custom_logger.warning("Starting with empty index.")
             self.index = faiss.IndexFlatL2(self.INDEX_DIM)
             self.image_metadata = []
     
@@ -83,10 +89,11 @@ class ImageToImageSearch:
         try:
             self.index.reset() 
             self.image_metadata = []
-            print("Index and metadata cleared successfully.")
-            print(f"Index now contains {self.index.ntotal} vectors")
+            custom_logger.info("Index and metadata cleared successfully.")
+            custom_logger.info(f"Index now contains {self.index.ntotal} vectors")
+        
         except Exception as e:
-            print(f"Error clearing index: {e}")
+            custom_logger.error(f"Error clearing index: {e}")
     
     def get_index_info(self):
         """Get information about the current index"""
@@ -108,6 +115,7 @@ class ImageToImageSearch:
             print("Error in embedding image: ", e)
             return torch.Tensor()
     
+
     def add_vector(self, embedding: torch.Tensor, metadata: dict = None):
         """Add a vector to the index with optional metadata"""
         try:
@@ -127,6 +135,7 @@ class ImageToImageSearch:
             print("Error in adding vector to index: ", e)
             return
     
+
     def img_search(self, image, top_k=3):
         try:
             with torch.no_grad():
@@ -149,54 +158,57 @@ class ImageToImageSearch:
             
             return results
         except Exception as e:
-            print("Error in searching image: ", e)
+            custom_logger.error(f"Error in searching image: {e}")
             return []
     
-    def add_images_from_urls(self, image_urls, batch_size=10):
-        """Add multiple images from URLs to the index"""
-        import requests
-        from PIL import Image
-        from io import BytesIO
+    # def add_images_from_urls(self, image_urls, batch_size=10):
+    #     """Add multiple images from URLs to the index"""
+    #     import requests
+    #     from PIL import Image
+    #     from io import BytesIO
         
-        successfully_added = 0
+    #     successfully_added = 0
         
-        for i, url in enumerate(image_urls):
-            try:
-                print(f"Processing image {i+1}/{len(image_urls)}: {url}")
+    #     for i, url in enumerate(image_urls):
+    #         try:
+    #             print(f"Processing image {i+1}/{len(image_urls)}: {url}")
                 
-                response = requests.get(url, stream=True, timeout=10)
-                response.raise_for_status()
+    #             response = requests.get(url, stream=True, timeout=10)
+    #             response.raise_for_status()
                 
-                image = Image.open(BytesIO(response.content)).convert("RGB")
-                embedding = self.embed_img(image)
+    #             image = Image.open(BytesIO(response.content)).convert("RGB")
+    #             embedding = self.embed_img(image)
                 
-                # Add metadata
-                metadata = {
-                    'url': url,
-                    'added_at': str(pd.Timestamp.now()) if 'pd' in globals() else str(i),
-                    'original_index': i
-                }
+    #             # Add metadata
+    #             metadata = {
+    #                 'url': url,
+    #                 'added_at': str(pd.Timestamp.now()) if 'pd' in globals() else str(i),
+    #                 'original_index': i
+    #             }
                 
-                self.add_vector(embedding, metadata)
-                successfully_added += 1
+    #             self.add_vector(embedding, metadata)
+    #             successfully_added += 1
                 
-                # Save periodically
-                if (i + 1) % batch_size == 0:
-                    self.build_index()
-                    print(f"Saved progress: {successfully_added} images added so far")
+    #             # Save periodically
+    #             if (i + 1) % batch_size == 0:
+    #                 self.build_index()
+    #                 print(f"Saved progress: {successfully_added} images added so far")
                     
-            except Exception as e:
-                print(f"Error processing image {url}: {e}")
-                continue
+    #         except Exception as e:
+    #             print(f"Error processing image {url}: {e}")
+    #             continue
         
-        # Final save
-        self.build_index()
-        print(f"Successfully added {successfully_added}/{len(image_urls)} images to the index")
-        return successfully_added
+    #     # Final save
+    #     self.build_index()
+    #     print(f"Successfully added {successfully_added}/{len(image_urls)} images to the index")
+    #     return successfully_added
     
-    def add_images_from_folder(self, folder_path, batch_size=10, allowed_exts=(".jpg", ".jpeg", ".png", ".webp", ".bmp")):
+    def add_images_from_folder(self, folder_path, batch_size=10, allowed_exts=None):
         """Add images from a local folder to the index, avoiding duplicates."""
 
+        if allowed_exts is None:
+            allowed_exts = self.supported_formats
+        
         successfully_added = 0
         all_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)
                      if os.path.isfile(os.path.join(folder_path, f)) and f.lower().endswith(allowed_exts)]
@@ -206,10 +218,10 @@ class ImageToImageSearch:
         for meta in self.image_metadata:
             if 'file_path' in meta:
                 existing_paths.add(meta['file_path'])
+        
         new_files = [f for f in all_files if f not in existing_paths]
         for i, file_path in enumerate(new_files):
             try:
-                print(f"Processing image {i+1}/{len(new_files)}: {file_path}")
                 image = Image.open(file_path).convert("RGB")
                 embedding = self.embed_img(image)
                 metadata = {
@@ -221,31 +233,33 @@ class ImageToImageSearch:
                 successfully_added += 1
                 if (i + 1) % batch_size == 0:
                     self.build_index()
-                    print(f"Saved progress: {successfully_added} images added so far")
+                    custom_logger.info(f"Saved progress: {successfully_added} images added so far")
+                
             except Exception as e:
-                print(f"Error processing image {file_path}: {e}")
+                custom_logger.error(f"Error processing image {file_path}: {e}")
                 continue
+        
         self.build_index()
-        print(f"Successfully added {successfully_added}/{len(new_files)} new images to the index from folder {folder_path}")
+        
+        custom_logger.info(f"Successfully added {successfully_added}/{len(new_files)} new images to the index from folder {folder_path}")
         return successfully_added
 
-def main(clear_index:bool = False, add_new_images:bool = False, folder_path = None, img_query_path : str = '/Users/varamana/Desktop/Wiki/IMG-20231026-WA0025.jpg'):
+def main(clear_index:bool = False, add_new_images:bool = False, folder_path = None, img_query_path : str = SystemConfig.sample_query_img_path):
     # Initialize pipeline (will automatically load existing index if available)
-    pipeline = ImageToImageSearch(image_dir="/Users/varamana/Desktop/Wiki")
-    print("Pipeline initialized successfully.")
+    pipeline = ImageToImageSearch(image_dir=SystemConfig.my_img_directory)
+    custom_logger.info("Pipeline initialized successfully.")
     
     # Print current index info
     info = pipeline.get_index_info()
-    print(f"Current index info: {info}")
+    custom_logger.info(f"Current index info: {info}")
 
     if clear_index:
-        print("Clearing existing index...")
+        custom_logger.info("Clearing existing index...")
         pipeline.clear_index()
 
     if pipeline.image_dir is None:
-        pipeline.image_dir = "/Users/varamana/Desktop/Wiki"
-    print(f"Adding images from local folder: {pipeline.image_dir}")
-
+        pipeline.image_dir = SystemConfig.my_img_directory
+    custom_logger.info(f"Adding images from local folder: {pipeline.image_dir}")
     
     if add_new_images:
         print("Index has {pipeline.index.ntotal} images after adding new images.")

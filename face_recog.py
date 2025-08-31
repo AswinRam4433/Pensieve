@@ -5,10 +5,15 @@ import faiss
 import face_recognition
 from PIL import Image
 from typing import List, Dict, Tuple, Optional
+from config import SystemConfig
+from utils.custom_logging import custom_logger
+
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
 
 
 class FaceIndexer:
-    """A clean, efficient face recognition and indexing system."""
+    """A face recognition and indexing system"""
     
     def __init__(self, image_dir: str = "images", index_path: str = "faces_new.index", 
                  meta_path: str = "metadata.pkl"):
@@ -18,7 +23,8 @@ class FaceIndexer:
         self.embeddings_path = meta_path.replace('.pkl', '_embeddings.npy')
         
         # Supported image formats
-        self.supported_formats = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+        self.supported_formats = SystemConfig.supported_formats
+        self.device = SystemConfig.device
         
         # Quality thresholds
         self.min_face_size = 50  # Minimum face size in pixels
@@ -49,8 +55,7 @@ class FaceIndexer:
     
     def build_index(self) -> Tuple[faiss.Index, Dict]:
         """Build FAISS index from images in directory."""
-        print(f"Building face index from directory: {self.image_dir}")
-        
+        custom_logger.info(f"Building face index from directory: {self.image_dir}")
         if not os.path.exists(self.image_dir):
             raise ValueError(f"Image directory '{self.image_dir}' does not exist!")
         
@@ -65,12 +70,9 @@ class FaceIndexer:
         if total_files == 0:
             raise ValueError(f"No valid image files found in {self.image_dir}")
         
-        print(f"Processing {total_files} image files...")
+        custom_logger.info(f"Processing {total_files} image files for face indexing")
         
         for i, filename in enumerate(image_files):
-            if i % 50 == 0:  # Progress every 50 files
-                print(f"Progress: {i}/{total_files} files processed")
-            
             file_path = os.path.join(self.image_dir, filename)
             
             try:
@@ -106,6 +108,9 @@ class FaceIndexer:
                     files_to_faces[filename].append(face_id)
                     face_to_photos[face_id] = (filename, face_idx, location)
                 
+                if i % 50 == 0:  # Progress every 50 files
+                    print(f"Progress: {i}/{total_files} files processed")
+                
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
                 continue
@@ -115,7 +120,7 @@ class FaceIndexer:
         
         # Convert to numpy array
         embeddings = np.array(embeddings, dtype=np.float32)
-        print(f"Successfully extracted {len(embeddings)} face embeddings from {len(files_to_faces)} images.")
+        custom_logger.info(f"Successfully extracted {len(embeddings)} face embeddings from {len(files_to_faces)} images.")
         
         # Normalize embeddings for cosine similarity
         faiss.normalize_L2(embeddings)
@@ -160,10 +165,11 @@ class FaceIndexer:
         
         with open(self.meta_path, "wb") as f:
             pickle.dump(metadata, f)
-        
-        print(f"✅ Saved index to {self.index_path}")
-        print(f"✅ Saved metadata to {self.meta_path}")
-        print(f"✅ Saved embeddings to {self.embeddings_path}")
+    
+
+        custom_logger.info(f"Saved index to {self.index_path}, metadata to {self.meta_path}, and embeddings to {self.embeddings_path}")
+        custom_logger.info("Saved metdata to {self.meta_path}")
+        custom_logger.info("Saved embeddings to {self.embeddings_path}")
     
     def load_index(self) -> Tuple[faiss.Index, Dict, Optional[np.ndarray]]:
         """Load FAISS index and metadata from disk."""
@@ -185,7 +191,7 @@ class FaceIndexer:
         if os.path.exists(self.embeddings_path):
             embeddings = np.load(self.embeddings_path)
         
-        print(f"✅ Loaded index with {metadata['total_faces']} faces from {metadata['total_images']} images")
+        custom_logger.info(f"Loaded index with {metadata['total_faces']} faces from {metadata['total_images']} images")
         return index, metadata, embeddings
     
     def search_similar_faces(self, query_image_path: str, index: faiss.Index, 
@@ -200,17 +206,17 @@ class FaceIndexer:
             face_locations = face_recognition.face_locations(image, model="hog")
             
             if not face_locations:
-                print("❌ No faces detected in query image")
+                custom_logger.info("No faces detected in query image")
                 return []
             
             # Get face encodings
             face_encodings = face_recognition.face_encodings(image, face_locations)
             
             if not face_encodings:
-                print("❌ Could not encode faces in query image")
+                custom_logger.info("Could not encode faces in query image")
                 return []
             
-            print(f"🔍 Found {len(face_encodings)} face(s) in query image")
+            custom_logger.info(f"Found {len(face_encodings)} face(s) in query image")
             
             all_results = []
             face_ids = metadata["face_ids"]
@@ -270,7 +276,7 @@ class FaceIndexer:
             return all_results
             
         except Exception as e:
-            print(f"Error processing query image: {e}")
+            custom_logger.error(f"Error processing query image: {e}")
             return []
     
     def get_face_clusters(self, embeddings: np.ndarray, num_clusters: int = 10) -> np.ndarray:
@@ -278,7 +284,7 @@ class FaceIndexer:
         if embeddings is None or len(embeddings) == 0:
             raise ValueError("No embeddings provided for clustering")
         
-        print(f"🤖 Clustering {len(embeddings)} faces into {num_clusters} clusters...")
+        custom_logger.info(f"Clustering {len(embeddings)} faces into {num_clusters} clusters")
         
         # Ensure embeddings are normalized
         normalized_embeddings = embeddings.copy()
@@ -298,6 +304,7 @@ class FaceIndexer:
         """Display search results in a formatted way."""
         if not results:
             print("No similar faces found.")
+            custom_logger.info("No similar faces found.")
             return
         
         for query_result in results:
@@ -324,8 +331,8 @@ class FaceIndexer:
 def main():
     """Main execution function."""
     # Configuration
-    IMAGE_DIR = "/Users/varamana/Desktop/Wiki"  # Update this path
-    QUERY_IMAGE = "/Users/varamana/Desktop/Wiki/IMG-20220524-WA0026.jpg"  # Update this path
+    IMAGE_DIR = SystemConfig.my_img_directory  
+    QUERY_IMAGE = SystemConfig.my_img_directory
     
     # Initialize the face indexer
     indexer = FaceIndexer(image_dir=IMAGE_DIR)
