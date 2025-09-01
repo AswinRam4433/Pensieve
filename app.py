@@ -1,3 +1,5 @@
+from fastapi.responses import FileResponse
+from fastapi import Query
 import os
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
@@ -25,8 +27,24 @@ app.add_middleware(
 
 
 # Initialize pipeline (set image_dir as needed)
-IMAGE_DIR = "images"
+# Initialize pipeline (set image_dir as needed)
+IMAGE_DIR = "/Users/varamana/Desktop/Wiki"
 pipeline = IntegratedPipeline(image_dir=IMAGE_DIR)
+
+# Serve images by path (for frontend display)
+@app.get('/image', tags=["Images"])
+def get_image(path: str = Query(..., description='Absolute or relative image path')):
+    """
+    Serve an image file by absolute or relative path (restricted to IMAGE_DIR).
+    """
+    import os
+    base_dir = os.path.abspath(IMAGE_DIR)
+    abs_path = os.path.abspath(path)
+    if not abs_path.startswith(base_dir):
+        return JSONResponse(status_code=403, content={'error': 'Access denied'})
+    if not os.path.exists(abs_path):
+        return JSONResponse(status_code=404, content={'error': 'Image not found'})
+    return FileResponse(abs_path)
 
 @app.get("/faces", response_model=None, tags=["Faces"])
 def list_faces(with_thumbnails: bool = False, thumbnail_size: int = 64):
