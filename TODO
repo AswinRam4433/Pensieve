@@ -1,10 +1,8 @@
 [] Assigning names to faces
 [] Index management in FAISS. When a photo gets deleted etc, do we redo the index or do we use this information some other way??
 [] Indexes for each category of searching and an index metadata file for storing what's what
-[] Making a unified backend app.py --> Ideally, one endpoint which calls indexing of all functionalities and one endpoint for searching that decides which functionalities are to be used further etc. 
-Need to decide on priority for calling the functionalities
-[] UI Cleanup --> Too shabby. Needs rework + CSS Overhaul
-[] UI Needs A New Component Type for each result image
 [] Lazy loading of functionalities
-[] Nesting of queries and query types
-[] Facial Recognition is shot up. Redo it
+[0] Number of results to return
+[1] Search by folder
+[2] Search by metadata
+[3] Search by faces

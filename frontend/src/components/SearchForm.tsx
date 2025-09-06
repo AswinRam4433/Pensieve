@@ -9,8 +9,6 @@ interface SearchFormProps {
     face_image?: File;
     query_image?: File;
     text?: string;
-    require_all?: boolean;
-    natural_query?: string;
   }) => void;
   loading: boolean;
 }
@@ -22,8 +20,6 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
   const [faceId, setFaceId] = useState<string>("");
   const [text, setText] = useState("");
-  const [requireAll, setRequireAll] = useState(false);
-  const [naturalQuery, setNaturalQuery] = useState("");
   const faceImageRef = useRef<HTMLInputElement>(null);
   const queryImageRef = useRef<HTMLInputElement>(null);
 
@@ -36,34 +32,47 @@ export const SearchForm: React.FC<SearchFormProps> = ({
       face_image,
       query_image,
       text: text.trim() || undefined,
-      require_all: requireAll,
-      natural_query: naturalQuery.trim() || undefined,
     });
   };
 
   return (
-    <form className="search-form" onSubmit={handleSubmit}>
-      <div className="form-group">
-        <label>Description (text):</label>
+    <form
+      className="search-form"
+      onSubmit={handleSubmit}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+        maxWidth: 500,
+        margin: "0 auto",
+      }}
+    >
+      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        <label htmlFor="text" style={{ flex: 1 }}>
+          Description:
+        </label>
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="e.g. a person smiling, outdoor scene..."
+          placeholder="Description (e.g. smiling person, outdoor...)"
           disabled={loading}
+          style={{ flex: 2, padding: "0.5rem" }}
         />
-      </div>
-      <div className="form-group">
-        <label>Similar Image:</label>
+        <label htmlFor="queryImage" style={{ flex: 1 }}>
+          Similar Image:
+        </label>
         <input
           type="file"
           ref={queryImageRef}
           accept="image/*"
           disabled={loading}
+          style={{ flex: 1 }}
+          title="Similar Image"
         />
       </div>
-      <div className="form-group">
-        <label>Face Search:</label>
+      <label htmlFor="faceImageRef">Or search by face:</label>
+      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
         <FaceDropdown
           faces={faces}
           value={faceId}
@@ -75,30 +84,15 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           ref={faceImageRef}
           accept="image/*"
           disabled={loading}
+          style={{ flex: 1 }}
+          title="Face Image"
         />
       </div>
-      <div className="form-group">
-        <label>
-          <input
-            type="checkbox"
-            checked={requireAll}
-            onChange={(e) => setRequireAll(e.target.checked)}
-            disabled={loading}
-          />
-          Require all criteria (intersection)
-        </label>
-      </div>
-      <div className="form-group">
-        <label>Natural Language Query:</label>
-        <input
-          type="text"
-          value={naturalQuery}
-          onChange={(e) => setNaturalQuery(e.target.value)}
-          placeholder="e.g. has to have face A, matches this description"
-          disabled={loading}
-        />
-      </div>
-      <button type="submit" disabled={loading}>
+      <button
+        type="submit"
+        disabled={loading}
+        style={{ alignSelf: "center", padding: "0.5rem 1.5rem" }}
+      >
         {loading ? "Searching..." : "Search"}
       </button>
     </form>

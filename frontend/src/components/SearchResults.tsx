@@ -79,34 +79,65 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       )}
       {results.text && results.text.length > 0 && (
         <div className="results-section">
-          <h3>Text Search Results</h3>
-          <ul>
-            {results.text.map((res, i) => (
-              <li key={i}>
-                {res.relative_path} - Similarity:{" "}
-                {(res.similarity * 100).toFixed(1)}%
-              </li>
-            ))}
-          </ul>
+          <h3>Text-to-Image Results</h3>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 16,
+              alignItems: "flex-start",
+            }}
+          >
+            {results.text.map((res, i) => {
+              const imgPath = res.image_path || "";
+              const imageUrl = imgPath
+                ? `${API_BASE}/image?path=${encodeURIComponent(imgPath)}`
+                : "";
+              return (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <ImageResult
+                    result={imageUrl}
+                    similarity={res.score_percentage}
+                    path={imgPath}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       {results.image && results.image.length > 0 && (
         <div className="results-section">
           <h3>Image-to-Image Results</h3>
-          <a>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 16,
+              alignItems: "flex-start",
+            }}
+          >
             {results.image.map((res, i) => {
               const imgPath = res.metadata.file_path || res.metadata.url || "";
               const imageUrl = imgPath
                 ? `${API_BASE}/image?path=${encodeURIComponent(imgPath)}`
                 : "";
               return (
-                <a
+                <div
                   key={i}
                   style={{
                     display: "flex",
-                    flexDirection: "row",
+                    flexDirection: "column",
                     alignItems: "center",
-                    marginBottom: 8,
                   }}
                 >
                   <ImageResult
@@ -114,10 +145,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                     distance={res.distance}
                     path={imgPath}
                   />
-                </a>
+                </div>
               );
             })}
-          </a>
+          </div>
         </div>
       )}
     </div>

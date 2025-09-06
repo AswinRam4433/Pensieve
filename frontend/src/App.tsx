@@ -34,9 +34,27 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      <h1>Image Search</h1>
-      <SearchForm faces={faces} onSearch={handleSearch} loading={loading} />
-      <SearchResults results={results} loading={loading} error={error} />
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          zIndex: 1000,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+          padding: "16px 0",
+        }}
+      >
+        <h1 style={{ margin: "0 0 12px 0", textAlign: "center" }}>
+          Image Search
+        </h1>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <SearchForm faces={faces} onSearch={handleSearch} loading={loading} />
+        </div>
+      </div>
+      <div style={{ marginTop: "120px" }}>
+        <SearchResults results={results} loading={loading} error={error} />
+      </div>
     </div>
   );
 };
