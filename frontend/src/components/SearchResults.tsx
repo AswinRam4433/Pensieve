@@ -20,16 +20,6 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   return (
     <div className="search-results">
-      {results.intersection && results.intersection.length > 0 && (
-        <div className="results-section">
-          <h3>Intersection (All Criteria Matched)</h3>
-          <ul>
-            {results.intersection.map((path, i) => (
-              <li key={i}>{path}</li>
-            ))}
-          </ul>
-        </div>
-      )}
       {results.face && results.face.length > 0 && (
         <div className="results-section">
           <h3>Face Search Results</h3>

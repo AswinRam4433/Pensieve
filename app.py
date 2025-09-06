@@ -88,8 +88,8 @@ async def unified_search(
     face_image: Optional[UploadFile] = File(None, description="Image file for face search (optional)"),
     query_image: Optional[UploadFile] = File(None, description="Image file for image-to-image search (optional)"),
     text: Optional[str] = Form(None, description="Text query for text-based search (optional)"),
-    require_all: Optional[bool] = Form(False, description="If True, returns intersection of results (optional)"),
-    natural_query: Optional[str] = Form(None, description="Natural language query (optional)")
+    natural_query: Optional[str] = Form(None, description="Natural language query (optional)"),
+    max_results: Optional[int] = Form(10, description="Maximum number of results to return")
 ):
     """
     Unified search endpoint.
@@ -134,13 +134,16 @@ async def unified_search(
     # Handle text query
     if text is not None:
         query["text"] = text
+    
+    if max_results is None:
+        max_results = 5
+    
 
-    # Handle require_all
-    query["require_all"] = require_all
 
     # Run unified search
     try:
-        results = pipeline.unified_search(query)
+       
+        results = pipeline.unified_search(query, max_results)
         return JSONResponse(content=results)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})

@@ -47,4 +47,5 @@ export interface UnifiedSearchResults {
   text?: SearchResultText[];
   image?: SearchResultImage[];
   intersection?: string[];
+  max_results?: number;
 }

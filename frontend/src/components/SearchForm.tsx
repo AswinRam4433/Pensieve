@@ -9,6 +9,7 @@ interface SearchFormProps {
     face_image?: File;
     query_image?: File;
     text?: string;
+    max_results?: number;
   }) => void;
   loading: boolean;
 }
@@ -20,18 +21,22 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
   const [faceId, setFaceId] = useState<string>("");
   const [text, setText] = useState("");
+  const [sliderValue, setSliderValue] = useState("10");
   const faceImageRef = useRef<HTMLInputElement>(null);
   const queryImageRef = useRef<HTMLInputElement>(null);
+  const numberOfResults = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const face_image = faceImageRef.current?.files?.[0];
     const query_image = queryImageRef.current?.files?.[0];
+    const max_results = Number(numberOfResults.current?.value) || 10;
     onSearch({
       face_id: faceId,
       face_image,
       query_image,
       text: text.trim() || undefined,
+      max_results,
     });
   };
 
@@ -87,6 +92,24 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           style={{ flex: 1 }}
           title="Face Image"
         />
+      </div>
+      <div>
+        <label htmlFor="numberOfResults">Number of results to return: </label>
+        <input
+          ref={numberOfResults}
+          type="range"
+          min="5"
+          max="20"
+          step="1"
+          value={numberOfResults.current?.value || "10"}
+          onChange={() => {
+            // Force re-render to show updated value
+            setSliderValue(numberOfResults.current?.value ?? "10");
+          }}
+        />
+        <span style={{ marginLeft: "1rem" }}>
+          {numberOfResults.current?.value || "10"}
+        </span>
       </div>
       <button
         type="submit"

@@ -26,11 +26,14 @@ export const ImageResult: React.FC<{
         src={result}
         alt="search result"
         style={{
+          height: "180px", // fixed height for all images
+          width: "auto", // width adjusts to aspect ratio
           maxWidth: "100%",
-          maxHeight: "180px",
           objectFit: "contain",
           borderRadius: "4px",
           background: "#eee",
+          display: "block",
+          margin: "0 auto",
         }}
       />
       <div
