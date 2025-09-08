@@ -25,6 +25,9 @@ export const SearchForm: React.FC<SearchFormProps> = ({
   const faceImageRef = useRef<HTMLInputElement>(null);
   const queryImageRef = useRef<HTMLInputElement>(null);
   const numberOfResults = useRef<HTMLInputElement>(null);
+  const [queryImagePreview, setQueryImagePreview] = useState<string | null>(
+    null
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,87 +43,115 @@ export const SearchForm: React.FC<SearchFormProps> = ({
     });
   };
 
+  const handleQueryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setQueryImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setQueryImagePreview(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setQueryImagePreview(null);
+    if (queryImageRef.current) {
+      queryImageRef.current.value = "";
+    }
+  };
+
   return (
-    <form
-      className="search-form"
-      onSubmit={handleSubmit}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-        maxWidth: 500,
-        margin: "0 auto",
-      }}
-    >
-      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <label htmlFor="text" style={{ flex: 1 }}>
-          Description:
-        </label>
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Description (e.g. smiling person)"
-          disabled={loading}
-          style={{ flex: 2, padding: "0.5rem" }}
-        />
-        <label htmlFor="queryImage" style={{ flex: 1 }}>
-          Similar Image:
-        </label>
-        <input
-          type="file"
-          ref={queryImageRef}
-          accept="image/*"
-          disabled={loading}
-          style={{ flex: 1 }}
-          title="Similar Image"
-        />
+    <form className="search-form horizontal-form" onSubmit={handleSubmit}>
+      <div className="form-sparkle-bg" />
+      <div className="form-row">
+        <div className="form-group">
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Description"
+            disabled={loading}
+            className="input"
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="queryImageInput" className="file-input-label">
+            Upload Image
+          </label>
+          <input
+            type="file"
+            id="queryImageInput"
+            ref={queryImageRef}
+            accept="image/*"
+            disabled={loading}
+            className="input file-input hidden-file-input"
+            title="Similar Image"
+            onChange={handleQueryImageChange}
+          />
+          {queryImagePreview && (
+            <div className="image-preview">
+              <img
+                src={queryImagePreview}
+                alt="Preview"
+                className="preview-image"
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="remove-image-btn"
+                title="Remove image"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+        {/* <div className="form-group">
+          <FaceDropdown
+            faces={faces}
+            value={faceId}
+            onChange={setFaceId}
+            loading={loading}
+          />
+        </div> */}
+        {/* <div className="form-group">
+          <label htmlFor="faceImageInput" className="file-input-label">
+            Upload Face Image
+          </label>
+          <input
+            type="file"
+            id="faceImageInput"
+            ref={faceImageRef}
+            accept="image/*"
+            disabled={loading}
+            className="input file-input"
+            title="Face Image"
+          />
+        </div> */}
+        <div className="form-group slider-group">
+          <input
+            ref={numberOfResults}
+            type="range"
+            min="5"
+            max="20"
+            step="1"
+            value={numberOfResults.current?.value || "10"}
+            onChange={() => {
+              setSliderValue(numberOfResults.current?.value ?? "10");
+            }}
+            className="slider"
+          />
+          <span className="slider-value">
+            {numberOfResults.current?.value || "10"}
+          </span>
+        </div>
+        <button type="submit" disabled={loading} className="submit-btn">
+          {loading ? "Searching..." : "Search"}
+        </button>
       </div>
-      <label htmlFor="faceImageRef">Or search by face:</label>
-      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <FaceDropdown
-          faces={faces}
-          value={faceId}
-          onChange={setFaceId}
-          loading={loading}
-        />
-        <input
-          type="file"
-          ref={faceImageRef}
-          accept="image/*"
-          disabled={loading}
-          style={{ flex: 1 }}
-          title="Face Image"
-        />
-      </div>
-      <div>
-        <label htmlFor="numberOfResults">Number of results to return: </label>
-        <input
-          ref={numberOfResults}
-          type="range"
-          min="5"
-          max="20"
-          step="1"
-          value={numberOfResults.current?.value || "10"}
-          onChange={() => {
-            setSliderValue(numberOfResults.current?.value ?? "10");
-          }}
-          style={{
-            background: "white",
-            opacity: 1,
-          }}
-        />
-        <span style={{ marginLeft: "1rem" }}>
-          {numberOfResults.current?.value || "10"}
-        </span>
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        style={{ alignSelf: "center", padding: "0.5rem 1.5rem" }}
-      >
-        {loading ? "Searching..." : "Search"}
-      </button>
     </form>
   );
 };

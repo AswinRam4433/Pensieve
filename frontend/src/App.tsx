@@ -145,7 +145,6 @@ const App: React.FC = () => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
           padding: "16px 0",
           minHeight: HEADER_HEIGHT,
-          backgroundColor: "rgb(45, 45, 45)",
         }}
       >
         <h1
