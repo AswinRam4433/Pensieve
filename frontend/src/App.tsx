@@ -19,6 +19,7 @@ const App: React.FC = () => {
       .catch(() => setFaces([]));
   }, []);
 
+  // GAI START
   // Sparkle animation effect
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -84,6 +85,7 @@ const App: React.FC = () => {
       requestAnimationFrame(animate);
     }
     animate();
+    // GAI END
 
     // Resize handler
     const handleResize = () => {
@@ -114,7 +116,7 @@ const App: React.FC = () => {
 
   const HEADER_HEIGHT = 160;
 
-  // Only show results if there are actual search results
+  // purple area should be displayed only if there are results
   const hasResults = results && (results.face || results.image || results.text);
 
   return (
@@ -143,6 +145,7 @@ const App: React.FC = () => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
           padding: "16px 0",
           minHeight: HEADER_HEIGHT,
+          backgroundColor: "rgb(45, 45, 45)",
         }}
       >
         <h1
@@ -156,7 +159,7 @@ const App: React.FC = () => {
             textShadow: "0 2px 8px #2d2d2d, 0 0 10px #7f5af0",
           }}
         >
-          Pensive
+          Pensieve
         </h1>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <SearchForm faces={faces} onSearch={handleSearch} loading={loading} />
@@ -166,7 +169,7 @@ const App: React.FC = () => {
         <div
           className="main-content"
           style={{
-            marginTop: HEADER_HEIGHT + 32, // Add extra space below header
+            marginTop: HEADER_HEIGHT + 45, // Add extra space below header
             height: `calc(100vh - ${HEADER_HEIGHT + 32}px)`,
             overflow: "hidden",
             display: "flex",

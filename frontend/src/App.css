@@ -1,4 +1,6 @@
 /* Sparkly background canvas styling */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap');
+
 .sparkle-bg {
   position: fixed;
   top: 0;
@@ -15,7 +17,6 @@
   position: relative;
   z-index: 1;
 }
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap');
 
 #root {
   max-width: 1280px;

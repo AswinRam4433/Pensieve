@@ -60,7 +60,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Description (e.g. smiling person, outdoor...)"
+          placeholder="Description (e.g. smiling person)"
           disabled={loading}
           style={{ flex: 2, padding: "0.5rem" }}
         />
@@ -103,8 +103,11 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           step="1"
           value={numberOfResults.current?.value || "10"}
           onChange={() => {
-            // Force re-render to show updated value
             setSliderValue(numberOfResults.current?.value ?? "10");
+          }}
+          style={{
+            background: "white",
+            opacity: 1,
           }}
         />
         <span style={{ marginLeft: "1rem" }}>
