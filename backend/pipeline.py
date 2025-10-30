@@ -145,6 +145,8 @@ class ImageToImageSearch:
             input_features = input_features.detach().cpu().numpy()
             input_features = np.float32(input_features)
             faiss.normalize_L2(input_features)
+            ## normalizing gives us unit vectors. Then dot(x,y) will be same as cosine similarity of x,y. 
+            ## ensures that all vectors are length invariant so that long norms dont cause bad results
             distances, indices = self.index.search(input_features, top_k)
             
             results = []

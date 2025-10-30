@@ -20,7 +20,7 @@ def root():
 @app.get("/test-volume")
 def test_volume():
     """Test if the volume mount is working"""
-    image_dir = "/Users/varamana/Desktop/Wiki"
+    image_dir = "<<YourSampleImageDir>>"
     try:
         if os.path.exists(image_dir):
             files = os.listdir(image_dir)[:10]  # List first 10 files

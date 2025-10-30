@@ -130,7 +130,7 @@ async def unified_search(
     if max_results is None:
         max_results = 5
     
-    # Run unified search
+    # Run search
     try:
        
         results = pipeline.unified_search(query, max_results)

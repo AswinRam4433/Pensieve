@@ -59,7 +59,7 @@ class MetadataBuilder:
         return self.metadata
 
 if __name__ == "__main__":
-    IMAGE_DIR = "/Users/varamana/Desktop/Wiki"    
+    IMAGE_DIR = "<<YourSampleImageDir>>"    
     builder = MetadataBuilder(image_dir=IMAGE_DIR)
     metadata = builder.build_metadata()
     print(f"Built metadata for {len(metadata)} images.")

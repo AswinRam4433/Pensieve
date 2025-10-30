@@ -1,7 +1,0 @@
-[] Assigning names to faces
-[] Index management in FAISS. When a photo gets deleted etc, do we redo the index or do we use this information some other way??
-[] Indexes for each category of searching and an index metadata file for storing what's what
-[] Lazy loading of functionalities
-[1] Search by folder
-[2] Search by metadata
-[3] Search by faces
