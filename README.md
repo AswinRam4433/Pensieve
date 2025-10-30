@@ -42,6 +42,17 @@ Both of these are open-source modles and run locally on the user's machine and c
 
 ## Examples
 
+<img width="1920" height="1080" alt="Screenshot 2025-10-30 at 15 59 40" src="https://github.com/user-attachments/assets/14174487-7f62-4326-b234-1cd9ff55d7c1" />
+<p align="center">Text-To-Image Search</p>
+
+<br><br><br>
+
+<img width="1920" height="1080" alt="Screenshot 2025-10-30 at 16 01 34" src="https://github.com/user-attachments/assets/b95068c8-74a8-4cdf-a5db-f54331443d58" />
+<p align="center">Image-To-Image Search</p>
+
+
+
+
 ## Limitations
 
 I really wanted to use mps in this project on my Mac but it causes lots of issues with FAISS
